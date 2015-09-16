@@ -13,22 +13,46 @@ import (
 	"time"
 )
 
-const XRESOLUTION = 2000
-const YRESOLUTION = 2000
+const XRESOLUTION = 500
+const YRESOLUTION = 500
 const FRAMES = 100
 const MAX_ITERATIONS = 50
 
-const MINX float64 = -2
-const MAXX float64 = 2
+const MINX float64 = -2.2
+const MAXX float64 = 2.2
 
-const MINY float64 = -2
-const MAXY float64 = 2
+const MINY float64 = -2.2
+const MAXY float64 = 2.2
+
+func getPixel(x int, y int, phi float64) color.Color {
+	var c = complex(float64(x)/float64(XRESOLUTION)*(MAXX-MINX)+float64(MINX),
+		float64(y)/float64(YRESOLUTION)*(MAXY-MINY)+float64(MINY))
+	var z complex128 = 0
+	var iterations uint8 = 0
+
+	// The interesting step that iteratres
+	for cmplx.Abs(z) < 5 && iterations < MAX_ITERATIONS {
+		z = 1/(z*z-cmplx.Rect(1, phi)) + c
+		iterations++
+	}
+
+	// Uncomment to invert the picture
+	// iterations = MAX_ITERATIONS - iterations
+
+	// adjust colors here
+	return color.RGBA{R: iterations * 3, G: iterations * 4, B: iterations * 8, A: 255}
+}
+
+// boring stuff below
 
 var colors [XRESOLUTION][YRESOLUTION]color.Color
 
 var startTime = time.Now()
 
 func main() {
+	os.RemoveAll("./anim")
+	os.Mkdir("./anim", 0700)
+
 	for frame := 0; frame < FRAMES; frame++ {
 		drawFrame(frame)
 		var timeLeft = (float64(FRAMES-frame) / float64(frame+1)) * time.Since(startTime).Seconds()
@@ -75,20 +99,4 @@ func getColumn(x int, phi float64, group *sync.WaitGroup) {
 		colors[x][y] = getPixel(x, y, phi)
 	}
 	group.Done()
-}
-
-func getPixel(x int, y int, phi float64) color.Color {
-	var c = complex(float64(x)/float64(XRESOLUTION)*(MAXX-MINX)+float64(MINX),
-		float64(y)/float64(YRESOLUTION)*(MAXY-MINY)+float64(MINY))
-	var z complex128 = 0
-	var iterations uint8 = 0
-	for cmplx.Abs(z) < 5 && iterations < MAX_ITERATIONS {
-		z = cmplx.Tan(z+complex(phi, 0))*z*Polar(1, cmplx.Phase(c)+math.Pi) + c
-		iterations++
-	}
-	return color.RGBA{R: iterations * 3, G: iterations * 4, B: iterations * 8, A: 255}
-}
-
-func Polar(radius, theta float64) complex128 {
-	return complex(radius, 0) * cmplx.Exp(complex(0, theta))
 }
