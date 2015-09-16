@@ -24,3 +24,9 @@ _testmain.go
 *.prof
 *.png
 *.gif
+
+# latex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
