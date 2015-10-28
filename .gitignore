@@ -30,3 +30,6 @@ _testmain.go
 *.fdb_latexmk
 *.fls
 *.log
+
+# CMake
+C++/build/
