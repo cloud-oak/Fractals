@@ -15,7 +15,7 @@ import (
 
 const XRESOLUTION = 500
 const YRESOLUTION = 500
-const FRAMES = 100
+const FRAMES = 1
 const MAX_ITERATIONS = 50
 
 const MINX float64 = -2.2
@@ -32,7 +32,7 @@ func getPixel(x int, y int, phi float64) color.Color {
 
 	// The interesting step that iteratres
 	for cmplx.Abs(z) < 5 && iterations < MAX_ITERATIONS {
-		z = 1/(z*z-cmplx.Rect(1, phi)) + c
+		z = z*z + c
 		iterations++
 	}
 
