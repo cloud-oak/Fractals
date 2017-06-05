@@ -32,12 +32,12 @@ SDL_Event event;
 
 void calcRange(int minX, int maxX)
 {
-	SDL_Rect myrect;
 	for(int x = minX; x<maxX; x++) {
 		for(int y = 0; y<HEIGHT; y ++) {
 			complex<double> c = {double(x) / WIDTH  * (MAXX-MINX) + MINX,
 								 double(y) / HEIGHT * (MAXY-MINY) + MINY};
 			complex<double> z = c;
+                        iters[x][y] = 0;
 			for(iters[x][y] = 0; iters[x][y] < MAX_ITERATIONS && abs(z) < 4; iters[x][y]++) {
 				z = z*z + c;
 			}
