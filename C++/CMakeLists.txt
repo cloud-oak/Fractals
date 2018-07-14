@@ -16,3 +16,10 @@ target_link_libraries(
     ${SDL2_LIBRARY}
     pthread
 )
+
+add_executable(bench bench.cpp)
+target_link_libraries(
+    bench
+    ${SDL2_LIBRARY}
+    pthread
+)

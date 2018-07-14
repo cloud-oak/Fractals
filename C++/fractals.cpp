@@ -1,113 +1,79 @@
-#include "SDL.h"
-#include <vector>
+#include "fractals.hpp"
 #include <cstdlib>
-#include <cmath>
-#include <thread>
 #include <iostream>
-#include <complex>
-
-using namespace std;
-
-int MAX_ITERATIONS = 50;
-
-double MINX = -2;
-double MAXX =  1;
-
-double MINY = -1;
-double MAXY =  1;
-
-#define WIDTH 1200
-#define HEIGHT 800
-
-#define NUM_THREADS 8
-
-
-double iters[WIDTH][HEIGHT];
-
-vector<thread> threads(NUM_THREADS);
+#include <sstream>
+#include <iomanip>
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 SDL_Event event;
 
-void calcRange(int minX, int maxX)
-{
-  for(int x = minX; x<maxX; x++) {
-    for(int y = 0; y<HEIGHT; y ++) {
-      complex<double> c = {double(x) / WIDTH  * (MAXX-MINX) + MINX,
-                 double(y) / HEIGHT * (MAXY-MINY) + MINY};
-      complex<double> z = c;
-                        iters[x][y] = 0;
-      for(iters[x][y] = 0; iters[x][y] < MAX_ITERATIONS && abs(z) < 4; iters[x][y]++) {
-        z = z*z + c;
-      }
-    }
-  }
-
-}
-
 int main()
 {
   SDL_Init(SDL_INIT_VIDEO);
   window = SDL_CreateWindow("Mandelbrot", SDL_WINDOWPOS_UNDEFINED,
-    SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+      SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
   bool quit = false;
-  bool invalid = true;
 
+  init();
+  
+  int frame = 0;
   while (!quit)
   {
     while (SDL_PollEvent(&event) > 0) {
       if (event.type == SDL_QUIT)
         quit = true;
       if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 1) {
-          float nWidthHalf = (MAXX - MINX) / 4;
-          float nHeightHalf = (MAXY - MINY) / 4;
-          float nCenterX = double(event.button.x) / WIDTH  * (MAXX-MINX) + MINX;
-          float nCenterY = double(event.button.y) / HEIGHT * (MAXY-MINY) + MINY;
-          MINX = nCenterX - nWidthHalf;
-          MAXX = nCenterX + nWidthHalf;
-          MINY = nCenterY - nHeightHalf;
-          MAXY = nCenterY + nHeightHalf;
+        float nWidthHalf = (MAXX - MINX) / 4;
+        float nHeightHalf = (MAXY - MINY) / 4;
+        float nCenterX = double(event.button.x) / WIDTH  * (MAXX-MINX) + MINX;
+        float nCenterY = double(event.button.y) / HEIGHT * (MAXY-MINY) + MINY;
+        MINX = nCenterX - nWidthHalf;
+        MAXX = nCenterX + nWidthHalf;
+        MINY = nCenterY - nHeightHalf;
+        MAXY = nCenterY + nHeightHalf;
 
-          MAX_ITERATIONS += 5;
+        MAX_ITERATIONS += 5;
 
-          invalid = true;
         break;
       }
     }
 
-    if(invalid)
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    calculate_frame();
+
+    for(int x = 0; x < WIDTH; x++) {
+      for(int y = 0; y < HEIGHT; y++) {
+        auto i = iters[x][y];
+        SDL_SetRenderDrawColor(renderer, R[i], G[i], B[i], 255);
+        SDL_RenderDrawPoint(renderer, x, y);
+      }
+    }
+
+    // SDL_RenderPresent(renderer);
+    if (frame < FRAMES) {
+      const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
+      SDL_Surface* pScreenShot = SDL_CreateRGBSurfaceWithFormat(0, WIDTH, HEIGHT, 32, format);
+
+      if(pScreenShot)
+      {
+        SDL_RenderReadPixels(renderer, NULL, format, pScreenShot->pixels, pScreenShot->pitch);
+
+        ostringstream str;
+        str << "/tmp/" << setfill('0') << setw(4) << frame << ".bmp";
+        SDL_SaveBMP(pScreenShot, str.str().c_str());
+        ++frame;
+
+        SDL_FreeSurface(pScreenShot);
+      } 
+    }
+    else
     {
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-      SDL_RenderClear(renderer);
-      
-      for(int i = 0; i<NUM_THREADS; i++)
-      {
-        threads[i] = thread(calcRange,
-           i   *  WIDTH / (NUM_THREADS),
-          (i+1)* WIDTH / (NUM_THREADS));
-      }
-      for(int i = 0; i<NUM_THREADS; i++)
-      {
-        threads[i].join();
-      }
-
-      for(int x = 0; x < WIDTH; x++) {
-        for(int y = 0; y < HEIGHT; y++) {
-          SDL_SetRenderDrawColor(renderer,
-            255 * iters[x][y] / MAX_ITERATIONS,
-            0,
-            255 - (255 / MAX_ITERATIONS)*iters[x][y],
-            255);
-          SDL_RenderDrawPoint(renderer, x, y);
-        }
-      }
-          
-      SDL_RenderPresent(renderer);
-
-      invalid = false;
+      quit = true;
     }
   }
 }
