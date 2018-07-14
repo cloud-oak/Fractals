@@ -6,6 +6,8 @@ set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/sdl2-cmake-scripts/ )
 
 find_package( SDL2 REQUIRED sdl2 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -Wall -Wextra -fno-omit-frame-pointer -march=native -Wno-unknown-pragmas -pthread -O3")
+
 include_directories(
     ${SDL2_INCLUDE_DIR}
 )
